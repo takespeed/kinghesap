@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:google_ml_kit/google_ml_kit.dart';
+// import 'package:google_ml_kit/google_ml_kit.dart';
 
 void main() {
   runApp(const MainApp());
@@ -25,23 +23,21 @@ class KingScorePage extends StatefulWidget {
 }
 
 class _KingScorePageState extends State<KingScorePage> {
-  // 4 oyuncu, 16 ceza, 8 koz, diğer eller
   final List<String> players = ['Oyuncu 1', 'Oyuncu 2', 'Oyuncu 3', 'Oyuncu 4'];
   final List<String> cezaAdlari = [
-  'EL ALMAZ 1',
-  'EL ALMAZ 2',
-  'KUPA ALMAZ 1',
-  'KUPA ALMAZ 2',
-  'KIZ ALMAZ 1',
-  'KIZ ALMAZ 2',
-  'ERKEK ALMAZ 1',
-  'ERKEK ALMAZ 2',
-  'SON İKİ 1',
-  'SON İKİ 2',
-  'RIFKI 1',
-  'RIFKI 2',
-  
-];
+    'EL ALMAZ 1',
+    'EL ALMAZ 2',
+    'KUPA ALMAZ 1',
+    'KUPA ALMAZ 2',
+    'KIZ ALMAZ 1',
+    'KIZ ALMAZ 2',
+    'ERKEK ALMAZ 1',
+    'ERKEK ALMAZ 2',
+    'SON İKİ 1',
+    'SON İKİ 2',
+    'RIFKI 1',
+    'RIFKI 2',
+  ];
 
   List<List<int?>> cezalar = List.generate(12, (_) => List.filled(4, null));
   List<List<int?>> kozlar = List.generate(8, (_) => List.filled(4, null));
@@ -49,11 +45,16 @@ class _KingScorePageState extends State<KingScorePage> {
   List<int> cezaToplamlari = List.filled(4, 0);
   List<int> kozToplamlari = List.filled(4, 0);
 
-  File? _image;
-  String? _ocrResult;
+  // String? _ocrResult; // Kaldırıldı
 
-  Future<void> pickImageAndReadText() async {
-    final picker = ImagePicker();
+  void hesapla() {
+    for (int i = 0; i < 4; i++) {
+      cezaToplamlari[i] = cezalar.fold(0, (sum, row) => sum + (row[i] ?? 0));
+      kozToplamlari[i] = kozlar.fold(0, (sum, row) => sum + (row[i] ?? 0));
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
