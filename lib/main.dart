@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-// import 'package:google_ml_kit/google_ml_kit.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   runApp(const MainApp());
@@ -45,7 +46,17 @@ class _KingScorePageState extends State<KingScorePage> {
   List<int> cezaToplamlari = List.filled(4, 0);
   List<int> kozToplamlari = List.filled(4, 0);
 
-  // String? _ocrResult; // Kaldırıldı
+  File? _imageFile;
+
+  Future<void> _takePhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   void hesapla() {
     for (int i = 0; i < 4; i++) {
@@ -63,6 +74,17 @@ class _KingScorePageState extends State<KingScorePage> {
         scrollDirection: Axis.vertical,
         child: Column(
           children: [
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _takePhoto,
+              child: const Text('Fotoğraf Çek'),
+            ),
+            const SizedBox(height: 10),
+            if (_imageFile != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.file(_imageFile!, height: 200),
+              ),
             const SizedBox(height: 10),
             Text('Cezalar', style: Theme.of(context).textTheme.titleLarge),
             SingleChildScrollView(
