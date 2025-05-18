@@ -1,6 +1,10 @@
+import 'dart:math' as Math;
+
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:math';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 void main() {
   runApp(const MainApp());
@@ -19,6 +23,8 @@ class MainApp extends StatelessWidget {
 }
 
 class KingScorePage extends StatefulWidget {
+  const KingScorePage({super.key});
+
   @override
   State<KingScorePage> createState() => _KingScorePageState();
 }
@@ -50,12 +56,116 @@ class _KingScorePageState extends State<KingScorePage> {
 
   Future<void> _takePhoto() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 100, // En yüksek kalite
+    );
+    
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
+      
+      // Fotoğraf çekildikten sonra OCR başlat
+      String? ocrText = await ocrFromImage(_imageFile!);
+      if (ocrText != null) {
+        // Önce sonuçları kullanıcıya göster ve onay al
+        bool? shouldImport = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Okunan Metin'),
+            content: SingleChildScrollView(child: Text(ocrText)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('İptal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Tabloya Aktar'),
+              ),
+            ],
+          ),
+        );
+        
+        if (shouldImport == true) {
+          parseOcrResultToTables(ocrText);
+        }
+      }
     }
+  }
+
+  Future<String?> ocrFromImage(File imageFile) async {
+    final inputImage = InputImage.fromFile(imageFile);
+    
+    // Text recognizer'ı yapılandırılmış şekilde oluştur
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    
+    // OCR işlemini gerçekleştir
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    await textRecognizer.close();
+    
+    return recognizedText.text;
+  }
+
+  void parseOcrResultToTables(String ocrText) {
+    // Kullanıcıya tanıma sonuçlarını gösterip onay al
+    print("OCR Sonucu: $ocrText"); // Debug için
+
+    // Satırları ayır
+    List<String> lines = ocrText.split('\n')
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+
+    // Her bir satırı işle
+    List<List<int>> parsedRows = [];
+    
+    for (String line in lines) {
+      // Satırdaki sayıları bul
+      final matches = RegExp(r'\d+').allMatches(line);
+      List<int> row = [];
+      
+      for (var match in matches) {
+        int? number = int.tryParse(match.group(0)!);
+        if (number != null) {
+          row.add(number);
+        }
+      }
+      
+      // Eğer satırda tam olarak 4 sayı varsa (4 oyuncu) ekle
+      if (row.length == 4) {
+        parsedRows.add(row);
+      }
+    }
+
+    // Eğer yeteri kadar satır bulunamadıysa uyarı göster
+    if (parsedRows.length < 12) {
+      print("Dikkat: Yeterli sayıda satır bulunamadı! (${parsedRows.length} satır bulundu, en az 12 gerekli)");
+      return;
+    }
+
+    // Verileri tabloya aktar
+    for (int i = 0; i < Math.min(12, parsedRows.length); i++) {
+      for (int j = 0; j < 4; j++) {
+        if (j < parsedRows[i].length) {
+          cezalar[i][j] = parsedRows[i][j];
+        }
+      }
+    }
+    
+    // Kozlar için yeteri kadar satır varsa
+    if (parsedRows.length >= 20) { // 12 ceza + 8 koz
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 4; j++) {
+          if (j < parsedRows[i+12].length) {
+            kozlar[i][j] = parsedRows[i+12][j];
+          }
+        }
+      }
+    }
+    
+    // Değişiklikleri yansıt
+    setState(() {});
   }
 
   void hesapla() {
